@@ -1,19 +1,25 @@
 import frida
 import sys
 rdev = frida.get_remote_device()
-session = rdev.attach("com.tencent.tmgp.pubgmhd")
+session = rdev.attach("com.example.administrator.myapplication")
+#pid = rdev.spawn(["com.tencent.tmgp.pubgmhd"])
+#session = rdev.attach(pid)
+#rdev.resume(pid)
 scr = """
 
-Interceptor.attach(Module.findExportByName("libc.so" , "open"), {
-    onEnter: function(args) {
-		var str = Memory.readCString(args[0]);
-		if(str.match('pubg')){
-		send("open("+Memory.readCString(args[0])+","+args[1]+")");
-		}
+Java.perform(function () {
+    var runtime = Java.use('android.app.ContextImpl');
+	var Log = Java.use("android.util.Log");
+        var Throwable = Java.use("java.lang.Throwable");
+    runtime.registerReceiver.overload('android.content.BroadcastReceiver','android.content.IntentFilter','java.lang.String','android.os.Handler').implementation = function () {
     
-    },
-    onLeave:function(retval){
-    
+        var args = arguments[0];
+		send('args:'+args);
+		
+        console.log(Log.getStackTraceString(Throwable.$new()));
+		var returnvar = this.registerReceiver(arguments[0],arguments[1],arguments[2],arguments[3]);
+  
+        return returnvar;
     }
 });
 
